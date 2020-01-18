@@ -7,7 +7,7 @@
                               }while(0)
 #define exec_cmd(cmd) exec_cmdaddr(cmd, NVMCTRL_USER)
 
-#define SEE_ADDR   (uint8_t * const)NVMCTRL_FUSES_SEEPSZ_ADDR
+#define SEE_ADDR   (uint8_t *const)NVMCTRL_FUSES_SEEPSZ_ADDR
 
 
 const struct {
@@ -25,7 +25,7 @@ const struct {
   { 65536, 7, 10}
 };
 
-uint8_t userPage[512];
+uint8_t userPage[128*4];
 
 void setSEESize(int s) {
   #if NVMCTRL_FUSES_SEEPSZ_ADDR != NVMCTRL_FUSES_SEESBLK_ADDR || ((NVMCTRL_FUSES_SEEPSZ_ADDR ^ NVMCTRL_USER) & ~0xF)
@@ -52,10 +52,9 @@ void setSEESize(int s) {
   }
   else {
     const bool format = ((newSEEFuses ^ *SEE_ADDR) & newSEEFuses);
-    if (format) {
-      memcpy(userPage, (uint8_t *)NVMCTRL_USER, sizeof(userPage));
+    memcpy(userPage, (uint8_t *const)NVMCTRL_USER, sizeof(userPage));
+    if (format)
       exec_cmd(NVMCTRL_CTRLB_CMD_EP);
-    }
     exec_cmd(NVMCTRL_CTRLB_CMD_PBC);
 
     const int newFusesIndex = (NVMCTRL_FUSES_SEEPSZ_ADDR - NVMCTRL_USER);
@@ -63,7 +62,7 @@ void setSEESize(int s) {
 
     const int ei = format ? (int)sizeof(userPage) : (newFusesIndex + 1);
     for (int i = 0; i < ei; i += 16) {
-      uint8_t * const qwBlockAddr = (uint8_t * const)(NVMCTRL_USER + i);
+      uint8_t *const qwBlockAddr = (uint8_t *const)(NVMCTRL_USER + i);
       memcpy (qwBlockAddr, &userPage[i], 16);
       exec_cmdaddr(NVMCTRL_CTRLB_CMD_WQW, qwBlockAddr);
     }
